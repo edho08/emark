@@ -106,6 +106,22 @@ where
     }
 }
 
+impl<'a, T, S> AsRef<T> for Ref<'a, T, S>
+where
+    S: LockState,
+{
+    fn as_ref(&self) -> &T {
+        self
+    }
+}
+
+impl<'a, T> AsMut<T> for Ref<'a, T, Mutable>
+{
+    fn as_mut(&mut self) -> &mut T {
+        self
+    }
+}
+
 impl<'a, T, S> Ref<'a, T, S>
 where
     S: LockState,
@@ -204,5 +220,21 @@ mod test_grained_ref {
         let _inner = unsafe { resource.borrow().leak() };
 
         assert_eq!(*resource.borrow(), Vec::<i32>::new());
+    }
+
+    #[test]
+    fn test_as_ref(){
+        let resource = GrainedLock::new(Vec::<i32>::new());
+        let inner = resource.borrow();
+        let inner = inner.as_ref();
+        assert_eq!(*inner, Vec::<i32>::new());
+    }
+
+    #[test]
+    fn test_as_mut(){
+        let resource = GrainedLock::new(Vec::<i32>::new());
+        let mut inner = resource.borrow_mut();
+        let inner = inner.as_mut();
+        assert_eq!(*inner, Vec::<i32>::new());
     }
 }

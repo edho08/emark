@@ -1,6 +1,6 @@
 use std::cell::UnsafeCell;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub(crate) struct GrainedUnsafeCell<T>(pub(crate) UnsafeCell<T>);
 unsafe impl<T> Sync for GrainedUnsafeCell<T> {}
 unsafe impl<T> Send for GrainedUnsafeCell<T> {}

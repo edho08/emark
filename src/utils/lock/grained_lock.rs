@@ -9,7 +9,7 @@ use super::{
     Ref,
 };
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 /// For internal use only.
 /// 
 /// Fine Grained Lock implementation.
