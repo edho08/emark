@@ -1,6 +1,8 @@
 [package]
-name = "emark1"
+name = "emark"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+dynstack = "0.4.0"
+parking_lot = "0.12.3"
