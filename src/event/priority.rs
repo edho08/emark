@@ -103,7 +103,9 @@ impl From<Routine> for Priority {
 /// This is the same as `Priority` but defined using type state method.
 ///
 /// # Examples
-pub trait PriorityState: Copy + Clone {}
+pub trait PriorityState: Copy + Clone {
+    fn priority() -> Priority;
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 /// Interrupt type state priority.
@@ -118,10 +120,26 @@ pub struct Normal;
 /// Routine type state priority.
 pub struct Routine;
 
-impl PriorityState for Interrupt {}
-impl PriorityState for High {}
-impl PriorityState for Normal {}
-impl PriorityState for Routine {}
+impl PriorityState for Interrupt {
+    fn priority() -> Priority {
+        Priority::Interrupt
+    }
+}
+impl PriorityState for High {
+    fn priority() -> Priority {
+        Priority::High
+    }
+}
+impl PriorityState for Normal {
+    fn priority() -> Priority {
+        Priority::Normal
+    }
+}
+impl PriorityState for Routine {
+    fn priority() -> Priority {
+        Priority::Routine
+    }
+}
 
 #[cfg(test)]
 mod test_priority {

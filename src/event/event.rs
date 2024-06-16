@@ -3,6 +3,8 @@
 /// An empty trait that is used to define events.
 /// Mainly used for type safety.
 ///
+/// To understand more about event see [event](crate::event)
+///
 /// # Examples
 /// Implementing Event trait is trivial as shown below:
 /// ```
@@ -13,6 +15,9 @@
 /// impl Event for SomeEvent {}
 /// ```
 pub trait Event {}
+
+pub(crate) struct GenericEvent;
+impl Event for GenericEvent {}
 
 #[cfg(test)]
 mod test_event {
