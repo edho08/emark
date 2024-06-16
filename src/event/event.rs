@@ -16,6 +16,8 @@
 /// ```
 pub trait Event {}
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(dead_code)]
 pub(crate) struct GenericEvent;
 impl Event for GenericEvent {}
 
