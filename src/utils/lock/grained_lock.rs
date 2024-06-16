@@ -10,6 +10,12 @@ use super::{
 };
 
 #[derive(Default)]
+/// For internal use only.
+/// 
+/// Fine Grained Lock implementation.
+/// Allow for fine grained locking mechanism with thread safety.
+/// This is mainly used for nested locking data structure that allows
+/// for locking without much hassle.
 pub(crate) struct GrainedLock<T> {
     pub(crate) lock: RwLock<()>,
     pub(crate) data: GrainedUnsafeCell<T>,
