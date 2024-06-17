@@ -182,7 +182,7 @@ impl EventManager {
                         .unwrap();
 
                     // return info
-                    (info, Box::new(event) as Box<dyn Any + Send + Sync>)
+                    (info, event)
                 });
 
             // return infos
@@ -374,5 +374,25 @@ mod test_event_manager {
 
         // assert next execution is None
         assert!(event_manager.next_execution().is_none());
+    }
+
+    #[test]
+    fn test_event_manager_next_box() {
+        let event_manager = EventManager::new();
+
+        // insert events
+        event_manager
+            .emit_priority(GenericEvent, Priority::Interrupt)
+            .unwrap();
+
+        let events = event_manager.next_execution().unwrap();
+        let events  = events.first().unwrap().1.downcast_ref::<Vec<GenericEvent>>().unwrap();
+        
+
+        // assert next execution is interrupt
+        assert_eq!(
+            *events,
+            vec![GenericEvent]
+        );
     }
 }

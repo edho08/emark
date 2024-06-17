@@ -3,8 +3,6 @@
 /// An empty trait that is used to define events.
 /// Mainly used for type safety.
 ///
-/// To understand more about event see [event](crate::event)
-///
 /// # Examples
 /// Implementing Event trait is trivial as shown below:
 /// ```
