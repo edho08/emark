@@ -7,16 +7,18 @@ use std::{
 };
 
 #[allow(dead_code)]
-pub(crate) trait LockState {}
+pub trait LockState {}
 #[allow(dead_code)]
-pub(crate) struct Immutable;
+#[derive(Debug, Default)]
+pub struct Immutable;
 #[allow(dead_code)]
-pub(crate) struct Mutable;
+#[derive(Debug, Default)]
+pub struct Mutable;
 
 impl LockState for Immutable {}
 impl LockState for Mutable {}
 
-pub(crate) struct Ref<'a, T, S>
+pub struct Ref<'a, T, S>
 where
     S: LockState,
 {
@@ -97,10 +99,7 @@ where
     }
 }
 
-impl<'a, T, S> DerefMut for Ref<'a, T, S>
-where
-    S: LockState,
-{
+impl<'a, T> DerefMut for Ref<'a, T, Mutable> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { self.data.as_mut() }
     }
@@ -115,8 +114,7 @@ where
     }
 }
 
-impl<'a, T> AsMut<T> for Ref<'a, T, Mutable>
-{
+impl<'a, T> AsMut<T> for Ref<'a, T, Mutable> {
     fn as_mut(&mut self) -> &mut T {
         self
     }
@@ -141,9 +139,9 @@ where
         }
     }
 
-    pub unsafe fn map<
+    pub fn map<
         K,
-        F: FnMut(NonNull<T>) -> (NonNull<K>, Option<NonNull<dyn Deref<Target = ()> + 'a>>),
+        F: FnMut(&T) -> (&K, Option<NonNull<dyn Deref<Target = ()> + 'a>>),
         NS: LockState,
     >(
         self,
@@ -154,14 +152,16 @@ where
             data,
             _marker,
         } = self;
-        let (data, lock) = f(data);
+        let (data, lock) = unsafe { f(data.as_ref()) };
         if let Some(lock) = lock {
-            locks.push(lock.as_ptr());
+            unsafe {
+                locks.push(lock.as_ptr());
+            }
             // core::mem::forget(lock)
         }
         Ref {
             locks,
-            data,
+            data: NonNull::from(data),
             _marker: PhantomData::<NS>,
         }
     }
@@ -181,8 +181,6 @@ where
 
 #[cfg(test)]
 mod test_grained_ref {
-    use std::ptr::NonNull;
-
     use crate::utils::lock::grained_lock::GrainedLock;
 
     use super::Immutable;
@@ -205,11 +203,9 @@ mod test_grained_ref {
         let resource = GrainedLock::new(Vec::<i32>::new());
         resource.borrow_mut().push(i32::default());
 
-        let inner = unsafe {
-            resource
-                .borrow()
-                .map::<_, _, Immutable>(|vec| (NonNull::from(vec.as_ref().get(0).unwrap()), None))
-        };
+        let inner = resource
+            .borrow()
+            .map::<_, _, Immutable>(|vec| (vec.get(0).unwrap(), None));
 
         assert_eq!(*inner, i32::default());
     }
@@ -223,7 +219,7 @@ mod test_grained_ref {
     }
 
     #[test]
-    fn test_as_ref(){
+    fn test_as_ref() {
         let resource = GrainedLock::new(Vec::<i32>::new());
         let inner = resource.borrow();
         let inner = inner.as_ref();
@@ -231,7 +227,7 @@ mod test_grained_ref {
     }
 
     #[test]
-    fn test_as_mut(){
+    fn test_as_mut() {
         let resource = GrainedLock::new(Vec::<i32>::new());
         let mut inner = resource.borrow_mut();
         let inner = inner.as_mut();

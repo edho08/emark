@@ -16,7 +16,7 @@ use super::{
 /// Allow for fine grained locking mechanism with thread safety.
 /// This is mainly used for nested locking data structure that allows
 /// for locking without much hassle.
-pub(crate) struct GrainedLock<T> {
+pub struct GrainedLock<T> {
     pub(crate) lock: RwLock<()>,
     pub(crate) data: GrainedUnsafeCell<T>,
 }
