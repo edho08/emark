@@ -106,12 +106,12 @@ impl RetreivalContainer for Container {
 
 #[cfg(test)]
 mod test_container {
-    use std::any::TypeId;
+    use std::{any::{Any, TypeId}, collections::HashMap};
 
-    use crate::store::{
+    use crate::{store::{
         query::{Access, RetreivalContainer},
         ResourceContainer,
-    };
+    }, utils::lock::GrainedLock};
 
     use super::Container;
 
@@ -164,5 +164,16 @@ mod test_container {
             assert!(!resource.is_immutable());
             assert!(!resource.is_mutable());
         }
+    }
+
+    #[test]
+    fn test_get_hashmap() {
+        let container = Container::default();
+        container.add_resource(1i32);
+        let resource = container.get(
+            TypeId::of::<HashMap<TypeId, GrainedLock<Box<dyn Any>>>>(),
+            Access::Immutable,
+        );
+        assert!(resource.is_found());
     }
 }
