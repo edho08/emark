@@ -9,7 +9,7 @@ use crate::utils::lock::{
     Ref,
 };
 
-use super::query::{Access, Retrievable, Retriever};
+use super::query::{Access, Retrievable, Retrieved, Retriever};
 
 pub struct Res<'a, T>(Ref<'a, Box<dyn Any>, Immutable>, PhantomData<T>);
 pub struct ResMut<'a, T>(Ref<'a, Box<dyn Any>, Mutable>, PhantomData<T>);
@@ -108,6 +108,10 @@ where
     fn from_retrieved<'a>(retrieved: super::query::Retrieved<'a>) -> Self::Item<'a> {
         match retrieved {
             super::query::Retrieved::Immutable(immutable) => Res(immutable, PhantomData),
+            super::query::Retrieved::NotFound => panic!(
+                "Resource of type `{}` not found",
+                std::any::type_name::<T>()
+            ),
             _ => unreachable!(),
         }
     }
@@ -126,7 +130,11 @@ where
 
     fn from_retrieved<'a>(retrieved: super::query::Retrieved<'a>) -> Self::Item<'a> {
         match retrieved {
-            super::query::Retrieved::Mutable(mutable) => ResMut(mutable, PhantomData),
+            Retrieved::Mutable(mutable) => ResMut(mutable, PhantomData),
+            Retrieved::NotFound => panic!(
+                "Resource of type `{}` not found",
+                std::any::type_name::<T>()
+            ),
             _ => unreachable!(),
         }
     }
@@ -145,9 +153,13 @@ where
 
     fn from_retrieved<'a>(retrieved: super::query::Retrieved<'a>) -> Self::Item<'a> {
         match retrieved {
-            super::query::Retrieved::Immutable(immutable) => {
+            Retrieved::Immutable(immutable) => {
                 ResClone(immutable.downcast_ref::<T>().unwrap().clone())
             }
+            Retrieved::NotFound => panic!(
+                "Resource of type `{}` not found",
+                std::any::type_name::<T>()
+            ),
             _ => unreachable!(),
         }
     }
@@ -187,7 +199,7 @@ where
 
     fn from_retrieved<'a>(retrieved: super::query::Retrieved<'a>) -> Self::Item<'a> {
         match retrieved {
-            super::query::Retrieved::Mutable(mutable) => Some(ResMut(mutable, PhantomData)),
+            Retrieved::Mutable(mutable) => Some(ResMut(mutable, PhantomData)),
             _ => None,
         }
     }
@@ -205,7 +217,10 @@ where
             match container.get(TypeId::of::<T>(), Access::from(Immutable)) {
                 super::query::Retrieved::Immutable(value) => value,
                 super::query::Retrieved::Mutable(_) => unreachable!(),
-                super::query::Retrieved::NotFound => panic!("Resource not found"),
+                super::query::Retrieved::NotFound => panic!(
+                    "Resource of type `{}` not found",
+                    std::any::type_name::<T>()
+                ),
             },
             PhantomData,
         )
@@ -224,7 +239,10 @@ where
             match container.get(TypeId::of::<T>(), Access::from(Mutable)) {
                 super::query::Retrieved::Immutable(_) => unreachable!(),
                 super::query::Retrieved::Mutable(value) => value,
-                super::query::Retrieved::NotFound => panic!("Resource not found"),
+                super::query::Retrieved::NotFound => panic!(
+                    "Resource of type `{}` not found",
+                    std::any::type_name::<T>()
+                ),
             },
             PhantomData,
         )
@@ -301,7 +319,10 @@ where
 mod tests_res {
     use std::collections::HashMap;
 
-    use crate::{store::{Container, ResourceContainer}, utils::lock::GrainedLock};
+    use crate::{
+        store::{Container, ResourceContainer},
+        utils::lock::GrainedLock,
+    };
 
     use super::*;
 
@@ -345,6 +366,15 @@ mod tests_res {
         let container = Container::default();
         // get resource
         let _ = ResMut::<i32>::retrieve(&container);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_res_multiple_not_found() {
+        // create container
+        let container = Container::default();
+        // get resource
+        let (_, _) = <(Res<i32>, Res<u32>)>::retrieve(&container);
     }
 
     #[test]
@@ -499,10 +529,10 @@ mod tests_res {
     }
 
     #[test]
-    fn test_res_hashmap(){
+    fn test_res_hashmap() {
         // create container
         let container = Container::default();
         // get resource
-        let _ = Res::<HashMap::<TypeId, GrainedLock<Box<dyn Any>>>>::retrieve(&container);
+        let _ = Res::<HashMap<TypeId, GrainedLock<Box<dyn Any>>>>::retrieve(&container);
     }
 }
