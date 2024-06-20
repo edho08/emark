@@ -299,7 +299,9 @@ where
 
 #[cfg(test)]
 mod tests_res {
-    use crate::store::{Container, ResourceContainer};
+    use std::collections::HashMap;
+
+    use crate::{store::{Container, ResourceContainer}, utils::lock::GrainedLock};
 
     use super::*;
 
@@ -494,5 +496,13 @@ mod tests_res {
         let res = Res::<i32>::retrieve(&container);
         // assert value
         assert_eq!(*res, 2i32);
+    }
+
+    #[test]
+    fn test_res_hashmap(){
+        // create container
+        let container = Container::default();
+        // get resource
+        let _ = Res::<HashMap::<TypeId, GrainedLock<Box<dyn Any>>>>::retrieve(&container);
     }
 }
